@@ -15,13 +15,13 @@ const upload = multer({ storage: storage });
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDV4VYcUS6FIBaNoNYk8uqi03pAkKfCtRQ",
-  authDomain: "music-edc12.firebaseapp.com",
-  projectId: "music-edc12",
-  storageBucket: "music-edc12.firebasestorage.app",
-  messagingSenderId: "761089825359",
-  appId: "1:761089825359:web:797c03caf78970b262a83a",
-  measurementId: "G-YGEJ5K897S"
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
