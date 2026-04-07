@@ -1,9 +1,32 @@
 const express = require('express');
 const cors = require('cors');
 const { io } = require('socket.io-client');
+const { initializeApp } = require('firebase/app');
+const { getFirestore, doc, getDoc, updateDoc, serverTimestamp } = require('firebase/firestore');
+const multer = require('multer');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
+
+// Configure multer for file uploads
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDV4VYcUS6FIBaNoNYk8uqi03pAkKfCtRQ",
+  authDomain: "music-edc12.firebaseapp.com",
+  projectId: "music-edc12",
+  storageBucket: "music-edc12.firebasestorage.app",
+  messagingSenderId: "761089825359",
+  appId: "1:761089825359:web:797c03caf78970b262a83a",
+  measurementId: "G-YGEJ5K897S"
+};
+
+// Initialize Firebase
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
 
 // Middleware
 app.use(cors());
@@ -130,8 +153,151 @@ app.get('/health', (req, res) => {
   res.json({ status: 'Backend server is running' });
 });
 
+// Test endpoint for debugging
+app.get('/test', (req, res) => {
+  console.log('Test endpoint hit!');
+  res.json({ message: 'Test endpoint working', timestamp: new Date().toISOString() });
+});
+
+// User profile endpoint
+app.get('/user/profile', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'User ID required' });
+    }
+
+    console.log('Fetching user profile from Firebase for userId:', userId);
+
+    // Fetch user profile from Firebase
+    const userDocRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      console.log('User document not found in Firebase for userId:', userId);
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const userData = userDoc.data();
+    console.log('Raw Firebase data for user:', userData);
+    
+    const userProfile = {
+      uid: userId,
+      displayName: userData.displayName || null,
+      email: userData.email || null,
+      photoURL: userData.photoURL || null,
+      createdAt: userData.createdAt || null,
+      updatedAt: userData.updatedAt || null
+    };
+
+    console.log('Processed user profile to return:', userProfile);
+    res.json({ success: true, user: userProfile });
+  } catch (error) {
+    console.error('Error fetching user profile from Firebase:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch user profile' });
+  }
+});
+
+// Update user profile endpoint
+app.put('/user/profile', async (req, res) => {
+  try {
+    const { userId, displayName, photoURL } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'User ID required' });
+    }
+
+    console.log('Updating user profile in Firebase:', { userId, displayName, photoURL });
+    
+    // Update user profile in Firebase
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, {
+      displayName: displayName || null,
+      photoURL: photoURL || null,
+      updatedAt: serverTimestamp()
+    });
+
+    // Fetch updated profile
+    const updatedDoc = await getDoc(userDocRef);
+    const updatedData = updatedDoc.data();
+
+    const updatedUserProfile = {
+      uid: userId,
+      displayName: updatedData.displayName || null,
+      email: updatedData.email || null,
+      photoURL: updatedData.photoURL || null,
+      updatedAt: updatedData.updatedAt || null
+    };
+
+    console.log('Successfully updated user profile in Firebase:', updatedUserProfile.displayName);
+    res.status(201).json({ success: true, message: 'Profile updated successfully', user: updatedUserProfile });
+  } catch (error) {
+    console.error('Error updating user profile in Firebase:', error);
+    res.status(500).json({ success: false, error: 'Failed to update user profile' });
+  }
+});
+
+// Profile picture upload endpoint
+app.post('/user/profile-picture', upload.single('profilePicture'), async (req, res) => {
+  console.log('Profile picture upload endpoint hit!');
+  
+  try {
+    const { userId } = req.body;
+    
+    console.log('Request body:', req.body);
+    console.log('Uploaded file:', req.file);
+    
+    if (!userId) {
+      console.log('Missing userId in request');
+      return res.status(400).json({ success: false, error: 'User ID required' });
+    }
+
+    if (!req.file) {
+      console.log('No file uploaded');
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    console.log('Uploading profile picture for userId:', userId);
+    console.log('File details:', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
+
+    // For now, return a mock URL since we don't have Firebase Storage setup in Express
+    // In a real implementation, you would upload to Firebase Storage or another storage service
+    const mockPhotoURL = `https://picsum.photos/seed/${userId}-${Date.now()}/200/200.jpg`;
+
+    // Update user profile with new photo URL
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, {
+      photoURL: mockPhotoURL,
+      updatedAt: serverTimestamp()
+    });
+
+    console.log('Successfully uploaded profile picture for userId:', userId);
+    res.json({ 
+      success: true, 
+      message: 'Profile picture uploaded successfully',
+      photoURL: mockPhotoURL
+    });
+  } catch (error) {
+    console.error('Error uploading profile picture:', error);
+    res.status(500).json({ success: false, error: 'Failed to upload profile picture' });
+  }
+});
+
+// Test GET endpoint for profile picture route
+app.get('/user/profile-picture', (req, res) => {
+  console.log('GET profile picture endpoint hit!');
+  res.json({ message: 'Profile picture GET endpoint working', method: 'GET' });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Backend server listening on port ${PORT}`);
   console.log(`HTTP endpoint: POST http://localhost:${PORT}/create-song`);
+  console.log(`User profile endpoint: GET http://localhost:${PORT}/user/profile?userId=xxx`);
+  console.log(`Profile picture upload endpoint: POST http://localhost:${PORT}/user/profile-picture`);
   console.log('Will send song-progress events to musicgpt-main via WebSocket');
 });
