@@ -150,7 +150,12 @@ app.post('/create-song', async (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'Backend server is running' });
+  res.json({ 
+    status: 'Backend server is running',
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    socketConnected: socket.connected
+  });
 });
 
 // Test endpoint for debugging
