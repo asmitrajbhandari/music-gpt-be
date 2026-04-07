@@ -3,14 +3,15 @@ const cors = require('cors');
 const { io } = require('socket.io-client');
 
 const app = express();
-const PORT = 3002;
+const PORT = process.env.PORT || 3002;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // Connect to musicgpt-main socket server
-const socket = io('http://localhost:3001', {
+const socketServerUrl = process.env.SOCKET_SERVER_URL || 'http://localhost:3001';
+const socket = io(socketServerUrl, {
   transports: ['websocket', 'polling']
 });
 
