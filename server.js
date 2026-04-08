@@ -39,19 +39,19 @@ const socket = io(socketServerUrl, {
 });
 
 socket.on('connect', () => {
-  console.log('Connected to musicgpt-main socket server');
+  // Connected to musicgpt-main socket server
 });
 
 socket.on('connect_error', (error) => {
-  console.error('Failed to connect to musicgpt-main socket server:', error.message);
+  // Failed to connect to musicgpt-main socket server
 });
 
 socket.on('song-progress', (data) => {
-  console.log('Received song-progress event (should not happen):', data);
+  // Received song-progress event (should not happen)
 });
 
 socket.on('disconnect', () => {
-  console.log('Disconnected from musicgpt-main socket server');
+  // Disconnected from musicgpt-main socket server
 });
 
 // HTTP endpoint to create songs
@@ -59,17 +59,11 @@ app.post('/create-song', async (req, res) => {
   try {
     const { prompt, itemIds } = req.body;
     
-    console.log('HTTP REQUEST RECEIVED:', prompt);
-    console.log('Item IDs:', itemIds);
-    
     if (!prompt || !itemIds || !Array.isArray(itemIds) || itemIds.length !== 2) {
-      console.error('Invalid data received');
-      return res.status(400).json({ success: false, error: 'Invalid data' });
+      return res.status(400).json({ success: false, error: 'Invalid data received' });
     }
 
     const [item1Id, item2Id] = itemIds;
-    
-    console.log('Starting progress simulation for items:', item1Id, item2Id);
     
     res.json({ success: true, message: 'Song creation started' });
     
@@ -84,10 +78,9 @@ app.post('/create-song', async (req, res) => {
         };
         
         socket.emit('song-progress', progressData);
-        console.log('Emitted song-progress for item1:', progressData);
         
         if (progress % 10 === 0) {
-          console.log(`Item1 Progress: ${progress}%`);
+          // Item1 progress milestone
         }
         
         await new Promise(resolve => setTimeout(resolve, 250));
@@ -116,10 +109,9 @@ app.post('/create-song', async (req, res) => {
         };
         
         socket.emit('song-progress', progressData);
-        console.log('Emitted song-progress for item2:', progressData);
         
         if (progress % 10 === 0) {
-          console.log(`Item2 Progress: ${progress}%`);
+          // Item2 progress milestone
         }
         
         await new Promise(resolve => setTimeout(resolve, 400));
@@ -139,7 +131,7 @@ app.post('/create-song', async (req, res) => {
     };
     
     Promise.all([simulateItem1(), simulateItem2()]).then(() => {
-      console.log('Both items completed');
+      // Both items completed
     });
     
   } catch (error) {
@@ -160,7 +152,6 @@ app.get('/health', (req, res) => {
 
 // Test endpoint for debugging
 app.get('/test', (req, res) => {
-  console.log('Test endpoint hit!');
   res.json({ message: 'Test endpoint working', timestamp: new Date().toISOString() });
 });
 
@@ -173,19 +164,16 @@ app.get('/user/profile', async (req, res) => {
       return res.status(400).json({ success: false, error: 'User ID required' });
     }
 
-    console.log('Fetching user profile from Firebase for userId:', userId);
 
     // Fetch user profile from Firebase
     const userDocRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userDocRef);
 
     if (!userDoc.exists()) {
-      console.log('User document not found in Firebase for userId:', userId);
       return res.status(404).json({ success: false, error: 'User not found' });
     }
 
     const userData = userDoc.data();
-    console.log('Raw Firebase data for user:', userData);
     
     const userProfile = {
       uid: userId,
@@ -196,7 +184,6 @@ app.get('/user/profile', async (req, res) => {
       updatedAt: userData.updatedAt || null
     };
 
-    console.log('Processed user profile to return:', userProfile);
     res.json({ success: true, user: userProfile });
   } catch (error) {
     console.error('Error fetching user profile from Firebase:', error);
@@ -213,7 +200,6 @@ app.put('/user/profile', async (req, res) => {
       return res.status(400).json({ success: false, error: 'User ID required' });
     }
 
-    console.log('Updating user profile in Firebase:', { userId, displayName, photoURL });
     
     // Update user profile in Firebase
     const userDocRef = doc(db, 'users', userId);
@@ -235,7 +221,6 @@ app.put('/user/profile', async (req, res) => {
       updatedAt: updatedData.updatedAt || null
     };
 
-    console.log('Successfully updated user profile in Firebase:', updatedUserProfile.displayName);
     res.status(201).json({ success: true, message: 'Profile updated successfully', user: updatedUserProfile });
   } catch (error) {
     console.error('Error updating user profile in Firebase:', error);
@@ -245,30 +230,19 @@ app.put('/user/profile', async (req, res) => {
 
 // Profile picture upload endpoint
 app.post('/user/profile-picture', upload.single('profilePicture'), async (req, res) => {
-  console.log('Profile picture upload endpoint hit!');
   
   try {
     const { userId } = req.body;
     
-    console.log('Request body:', req.body);
-    console.log('Uploaded file:', req.file);
     
     if (!userId) {
-      console.log('Missing userId in request');
       return res.status(400).json({ success: false, error: 'User ID required' });
     }
 
     if (!req.file) {
-      console.log('No file uploaded');
       return res.status(400).json({ success: false, error: 'No file uploaded' });
     }
 
-    console.log('Uploading profile picture for userId:', userId);
-    console.log('File details:', {
-      originalname: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size
-    });
 
     // For now, return a mock URL since we don't have Firebase Storage setup in Express
     // In a real implementation, you would upload to Firebase Storage or another storage service
@@ -281,7 +255,6 @@ app.post('/user/profile-picture', upload.single('profilePicture'), async (req, r
       updatedAt: serverTimestamp()
     });
 
-    console.log('Successfully uploaded profile picture for userId:', userId);
     res.json({ 
       success: true, 
       message: 'Profile picture uploaded successfully',
@@ -295,14 +268,9 @@ app.post('/user/profile-picture', upload.single('profilePicture'), async (req, r
 
 // Test GET endpoint for profile picture route
 app.get('/user/profile-picture', (req, res) => {
-  console.log('GET profile picture endpoint hit!');
   res.json({ message: 'Profile picture GET endpoint working', method: 'GET' });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Backend server listening on port ${PORT}`);
-  console.log(`HTTP endpoint: POST http://localhost:${PORT}/create-song`);
-  console.log(`User profile endpoint: GET http://localhost:${PORT}/user/profile?userId=xxx`);
-  console.log(`Profile picture upload endpoint: POST http://localhost:${PORT}/user/profile-picture`);
-  console.log('Will send song-progress events to musicgpt-main via WebSocket');
+  // Backend server listening on port ${PORT}
 });
