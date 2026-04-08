@@ -271,6 +271,40 @@ app.get('/user/profile-picture', (req, res) => {
   res.json({ message: 'Profile picture GET endpoint working', method: 'GET' });
 });
 
+// Song update endpoint for like/unlike functionality
+app.put('/songs/:songId', async (req, res) => {
+  try {
+    const { songId } = req.params;
+    const { userId, updates } = req.body;
+    
+    if (!userId || !songId || !updates) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    
+    // Reference to the user's song document
+    const songRef = doc(db, 'users', userId, 'songs', songId);
+    
+    // Update the song document
+    await updateDoc(songRef, {
+      ...updates,
+      updatedAt: serverTimestamp()
+    });
+    
+    // Return 206 for like/unlike and display name updates
+    const isLikeUnlikeUpdate = updates.hasOwnProperty('liked') || updates.hasOwnProperty('disliked');
+    const isDisplayNameUpdate = updates.hasOwnProperty('displayName');
+    
+    if (isLikeUnlikeUpdate || isDisplayNameUpdate) {
+      return res.status(206).json({ success: true, message: 'Song updated successfully' });
+    }
+    
+    res.json({ success: true, message: 'Song updated successfully' });
+  } catch (error) {
+    console.error('Error updating song:', error);
+    res.status(500).json({ success: false, error: 'Failed to update song' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   // Backend server listening on port ${PORT}
 });
