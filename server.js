@@ -54,8 +54,8 @@ socket.on('disconnect', () => {
   // Disconnected from musicgpt-main socket server
 });
 
-// HTTP endpoint to create songs
-app.post('/create-song', async (req, res) => {
+// HTTP endpoint to initiate song generation
+app.post('/initiate-song-generation', async (req, res) => {
   try {
     const { prompt, itemIds } = req.body;
     
@@ -65,7 +65,7 @@ app.post('/create-song', async (req, res) => {
 
     const [item1Id, item2Id] = itemIds;
     
-    res.json({ success: true, message: 'Song creation started' });
+    res.status(201).json({ success: true, message: 'Song generation initiated' });
     
     // Simulate progress and send via socket to musicgpt-main
     const simulateItem1 = async () => {
